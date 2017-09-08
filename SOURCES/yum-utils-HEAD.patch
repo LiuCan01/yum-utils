@@ -1229,7 +1229,7 @@ index 0000000..c9d388d
 +There are of course no bugs, but should you find any, you should first
 +consult the FAQ section on http://yum.baseurl.org/wiki/Faq and if unsuccessful
 +in finding a resolution contact the mailing list: yum-devel@lists.baseurl.org.
-+To file a bug use http://bugzilla.redhat.com for Fedora/RHEL/Centos
++To file a bug use http://www.easystack.cn/ for EasyStack
 +related bugs and http://yum.baseurl.org/report for all other bugs.
 +
 +.fi
