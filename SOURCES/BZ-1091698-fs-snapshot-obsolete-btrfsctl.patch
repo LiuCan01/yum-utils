@@ -1,0 +1,36 @@
+commit 92fd923f75f1f42d246e925f1c4526f36f6fd88d
+Author: Stephen Degler <stephen@degler.net>
+Date:   Tue Sep 24 17:06:14 2013 +0200
+
+    fs-snapshot: btrfsctl is obsolete, use btrfs. BZ 1010974
+
+diff --git a/plugins/fs-snapshot/fs-snapshot.py b/plugins/fs-snapshot/fs-snapshot.py
+index 4f99b6a..786b0c1 100644
+--- a/plugins/fs-snapshot/fs-snapshot.py
++++ b/plugins/fs-snapshot/fs-snapshot.py
+@@ -198,9 +198,8 @@ def _create_btrfs_snapshot(conduit, snapshot_tag, volume):
+     """
+     Runs the commands necessary for a snapshot.  Basically its just
+ 
+-    btrfsctl -c /dir/to/snapshot    #this syncs the fs
+-    btrfsctl -s /dir/to/snapshot/${snapshot_tag}
+-                /dir/to/snapshot
++    btrfs filesystem sync /dir/to/snapshot    #this syncs the fs
++    btrfs subvolume snapshot /dir/to/snapshot /dir/to/snapshot/${snapshot_tag}
+ 
+     and then we're done.
+     """
+@@ -212,11 +211,11 @@ def _create_btrfs_snapshot(conduit, snapshot_tag, volume):
+ 
+     snapname = mntpnt + snapshot_tag
+     conduit.info(1, "fs-snapshot: snapshotting " + mntpnt + ": " + snapname)
+-    p = Popen(["/sbin/btrfsctl", "-c", mntpnt], stdout=PIPE, stderr=PIPE)
++    p = Popen(["/sbin/btrfs", "filesystem", "sync", mntpnt], stdout=PIPE, stderr=PIPE)
+     err = p.wait()
+     if err:
+         return 1
+-    p = Popen(["/sbin/btrfsctl", "-s", snapname, mntpnt], stdout=PIPE, stderr=PIPE)
++    p = Popen(["/sbin/btrfs", "subvolume", "snapshot", mntpnt, snapname], stdout=PIPE, stderr=PIPE)
+     err = p.wait()
+     if err:
+         return 1

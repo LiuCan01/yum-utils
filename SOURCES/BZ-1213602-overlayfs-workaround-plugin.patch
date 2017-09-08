@@ -1,0 +1,480 @@
+commit 0c0b029122b476c269a4b560d9be558e69e054ae
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Thu Jun 25 12:09:52 2015 +0200
+
+    Add plugin for overlayfs issue workaround. Patch by Pavel Odvody. BZ#1213602
+
+diff --git a/plugins/ovl/ovl.conf b/plugins/ovl/ovl.conf
+new file mode 100644
+index 0000000..8e4d76c
+--- /dev/null
++++ b/plugins/ovl/ovl.conf
+@@ -0,0 +1,2 @@
++[main]
++enabled=1
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+new file mode 100644
+index 0000000..de34081
+--- /dev/null
++++ b/plugins/ovl/ovl.py
+@@ -0,0 +1,48 @@
++# Copyright (C) 2015  Red Hat, Inc.
++#
++# Authors: Pavel Odvody <podvody@redhat.com>
++#
++# This copyrighted material is made available to anyone wishing to use,
++# modify, copy, or redistribute it subject to the terms and conditions of
++# the GNU General Public License v.2, or (at your option) any later version.
++# This program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY expressed or implied, including the implied warranties of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
++# Public License for more details.  You should have received a copy of the
++# GNU General Public License along with this program; if not, write to the
++# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
++# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
++# source code or documentation are not subject to the GNU General Public
++# License and may only be used or replicated with the express permission of
++# Red Hat, Inc.
++
++from yum.plugins import TYPE_CORE
++from os import utime, walk, path
++
++requires_api_version = '2.3'
++plugin_type = (TYPE_CORE,)
++base_dir = 'var/lib/rpm/'
++mtab = '/etc/mtab'
++
++def should_touch():
++        """ 
++        Touch the files only once we've verified that
++        we're on overlay mount
++        """
++        with open(mtab, 'r') as f:
++                line = f.readline()
++                return line and line.startswith('overlay /')
++        return False
++
++def init_hook(conduit):
++        if not should_touch():
++                return
++    ir = conduit.getConf().installroot
++        try:
++                for root, _, files in walk(path.join(ir, base_dir)):
++                        for f in files:
++                                p = path.join(root, f)
++                                with open(p, 'a'):
++                                        utime(p, None)
++        except Exception as e:
++                conduit.error(1, "Error while doing RPMdb copy-up:\n%s" % e)
+commit 1555cfa6465e6e31515a86f097c8993d89c0085e
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Thu Jun 25 12:30:13 2015 +0200
+
+    ovl plugin: fix indentation
+
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+index de34081..eda784e 100644
+--- a/plugins/ovl/ovl.py
++++ b/plugins/ovl/ovl.py
+@@ -25,24 +25,24 @@ base_dir = 'var/lib/rpm/'
+ mtab = '/etc/mtab'
+ 
+ def should_touch():
+-        """ 
+-        Touch the files only once we've verified that
+-        we're on overlay mount
+-        """
+-        with open(mtab, 'r') as f:
+-                line = f.readline()
+-                return line and line.startswith('overlay /')
+-        return False
++    """ 
++    Touch the files only once we've verified that
++    we're on overlay mount
++    """
++    with open(mtab, 'r') as f:
++        line = f.readline()
++        return line and line.startswith('overlay /')
++    return False
+ 
+ def init_hook(conduit):
+-        if not should_touch():
+-                return
++    if not should_touch():
++        return
+     ir = conduit.getConf().installroot
+-        try:
+-                for root, _, files in walk(path.join(ir, base_dir)):
+-                        for f in files:
+-                                p = path.join(root, f)
+-                                with open(p, 'a'):
+-                                        utime(p, None)
+-        except Exception as e:
+-                conduit.error(1, "Error while doing RPMdb copy-up:\n%s" % e)
++    try:
++        for root, _, files in walk(path.join(ir, base_dir)):
++            for f in files:
++                p = path.join(root, f)
++                with open(p, 'a'):
++                    utime(p, None)
++    except Exception as e:
++        conduit.error(1, "Error while doing RPMdb copy-up:\n%s" % e)
+commit 617d2d90a553f9e5bc4dfd9ab2f9c194b956fcab
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Thu Jun 25 12:53:39 2015 +0200
+
+    ovl plugin: get rpmdbpath from conduit
+
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+index eda784e..f2fbdd4 100644
+--- a/plugins/ovl/ovl.py
++++ b/plugins/ovl/ovl.py
+@@ -21,7 +21,6 @@ from os import utime, walk, path
+ 
+ requires_api_version = '2.3'
+ plugin_type = (TYPE_CORE,)
+-base_dir = 'var/lib/rpm/'
+ mtab = '/etc/mtab'
+ 
+ def should_touch():
+@@ -34,12 +33,12 @@ def should_touch():
+         return line and line.startswith('overlay /')
+     return False
+ 
+-def init_hook(conduit):
++def prereposetup_hook(conduit):
+     if not should_touch():
+         return
+-    ir = conduit.getConf().installroot
++    rpmdb_path = conduit.getRpmDB()._rpmdbpath
+     try:
+-        for root, _, files in walk(path.join(ir, base_dir)):
++        for root, _, files in walk(rpmdb_path):
+             for f in files:
+                 p = path.join(root, f)
+                 with open(p, 'a'):
+commit 5cd70d30bcdbd544e086a1aa3e7522c89bbd893a
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue Aug 4 12:00:37 2015 +0200
+
+    ovl plugin: change copy-up strategy, execute when root fs is mounted OverlayFS, add logging. Patch by Pavel Odvody.
+
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+index f2fbdd4..8dd0a9e 100644
+--- a/plugins/ovl/ovl.py
++++ b/plugins/ovl/ovl.py
+@@ -1,47 +1,93 @@
+-# Copyright (C) 2015  Red Hat, Inc.
+-#
+-# Authors: Pavel Odvody <podvody@redhat.com>
+-#
+-# This copyrighted material is made available to anyone wishing to use,
+-# modify, copy, or redistribute it subject to the terms and conditions of
+-# the GNU General Public License v.2, or (at your option) any later version.
+-# This program is distributed in the hope that it will be useful, but WITHOUT
+-# ANY WARRANTY expressed or implied, including the implied warranties of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+-# Public License for more details.  You should have received a copy of the
+-# GNU General Public License along with this program; if not, write to the
+-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
+-# source code or documentation are not subject to the GNU General Public
+-# License and may only be used or replicated with the express permission of
+-# Red Hat, Inc.
+-
+ from yum.plugins import TYPE_CORE
+-from os import utime, walk, path
++from os import walk, path, fstat
+ 
+ requires_api_version = '2.3'
+ plugin_type = (TYPE_CORE,)
+ mtab = '/etc/mtab'
+ 
++
++def _stat_ino_fp(fp):
++    """
++    Get the inode number from file descriptor
++    """
++    return fstat(fp.fileno()).st_ino
++
++
++def get_file_list(rpmpath):
++    """
++    Enumerate all files in a directory
++    """
++    for root, _, files in walk(rpmpath):
++        for f in files:
++            yield path.join(root, f)
++
++
++def for_each_file(files, cb, m='rb'):
++    """
++    Open each file with mode specified in `m`
++    and invoke `cb` on each of the file objects
++    """
++    if not files or not cb:
++        return []
++    ret = []
++    for f in files:
++        with open(f, m) as fp:
++            ret.append(cb(fp))
++    return ret
++
++
++def do_detect_copy_up(files):
++    """
++    Open the files first R/O, then R/W and count unique
++    inode numbers
++    """
++    num_files = len(files)
++    lower = for_each_file(files, _stat_ino_fp, 'rb')
++    upper = for_each_file(files, _stat_ino_fp, 'ab')
++    diff = set(lower + upper)
++    return len(diff) - num_files
++
++
++def raw_copy_up(files):
++    """
++    Induce a copy-up by opening R/W
++    """
++    return for_each_file(files, _stat_ino_fp, 'ab')
++
++
++def should_be_verbose(cmd):
++    """
++    If the debuglevel is > 2 then be verbose
++    """
++    if not hasattr(cmd, 'debuglevel'):
++        return False
++    return cmd.debuglevel > 2
++
++
+ def should_touch():
+     """ 
+     Touch the files only once we've verified that
+     we're on overlay mount
+     """
++    if not path.exists(mtab):
++        return False
+     with open(mtab, 'r') as f:
+         line = f.readline()
+-        return line and line.startswith('overlay /')
++        return line.startswith('overlay / overlay')
+     return False
+ 
++
+ def prereposetup_hook(conduit):
+     if not should_touch():
+         return
++
+     rpmdb_path = conduit.getRpmDB()._rpmdbpath
++
+     try:
+-        for root, _, files in walk(rpmdb_path):
+-            for f in files:
+-                p = path.join(root, f)
+-                with open(p, 'a'):
+-                    utime(p, None)
++        files = list(get_file_list(rpmdb_path))
++        if should_be_verbose(conduit.getCmdLine()[0]):
++            conduit.info(1, "ovl: Copying up (%i) files from OverlayFS lower layer" % do_detect_copy_up(files))
++        else:
++            raw_copy_up(files)
+     except Exception as e:
+-        conduit.error(1, "Error while doing RPMdb copy-up:\n%s" % e)
++        conduit.error(1, "ovl: Error while doing RPMdb copy-up:\n%s" % e)
+commit 11e4a7386e2e351e0ff5f8d89663eb66220a6100
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue Aug 4 12:18:49 2015 +0200
+
+    ovl plugin: remove redundant debuglevel check
+
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+index 8dd0a9e..400d3c7 100644
+--- a/plugins/ovl/ovl.py
++++ b/plugins/ovl/ovl.py
+@@ -4,6 +4,7 @@ from os import walk, path, fstat
+ requires_api_version = '2.3'
+ plugin_type = (TYPE_CORE,)
+ mtab = '/etc/mtab'
++VERBOSE_DEBUGLEVEL = 3
+ 
+ 
+ def _stat_ino_fp(fp):
+@@ -48,22 +49,6 @@ def do_detect_copy_up(files):
+     return len(diff) - num_files
+ 
+ 
+-def raw_copy_up(files):
+-    """
+-    Induce a copy-up by opening R/W
+-    """
+-    return for_each_file(files, _stat_ino_fp, 'ab')
+-
+-
+-def should_be_verbose(cmd):
+-    """
+-    If the debuglevel is > 2 then be verbose
+-    """
+-    if not hasattr(cmd, 'debuglevel'):
+-        return False
+-    return cmd.debuglevel > 2
+-
+-
+ def should_touch():
+     """ 
+     Touch the files only once we've verified that
+@@ -85,9 +70,7 @@ def prereposetup_hook(conduit):
+ 
+     try:
+         files = list(get_file_list(rpmdb_path))
+-        if should_be_verbose(conduit.getCmdLine()[0]):
+-            conduit.info(1, "ovl: Copying up (%i) files from OverlayFS lower layer" % do_detect_copy_up(files))
+-        else:
+-            raw_copy_up(files)
++        copied_num = do_detect_copy_up(files)
++        conduit.info(VERBOSE_DEBUGLEVEL, "ovl: Copying up (%i) files from OverlayFS lower layer" % copied_num)
+     except Exception as e:
+         conduit.error(1, "ovl: Error while doing RPMdb copy-up:\n%s" % e)
+commit 6f43c2e1aff0ee0746685778544f7b05d2ef78a1
+Author: Pavel Odvody <podvody@redhat.com>
+Date:   Thu Sep 3 18:09:58 2015 +0200
+
+    Add manpage, remove file-system check
+
+diff --git a/docs/yum-ovl.1 b/docs/yum-ovl.1
+new file mode 100644
+index 0000000..ddfbfab
+--- /dev/null
++++ b/docs/yum-ovl.1
+@@ -0,0 +1,22 @@
++.TH "yum\-ovl" "1" "September 2015" "Red Hat" "User Manual"
++.
++.SH "NAME"
++yum\-ovl \- Performs an initial copy\-up of yum(8) package database\.
++.
++.SH "OPTIONS"
++\fB\-d\fR \fIdebug\-level\fR If debug level is \fI2\fR and more, print out the number of files copied up from the lower layer
++.
++.SH "FILES"
++\fI/usr/lib/yum\-plugins/ovl\.py\fR Plugin itself
++.
++.P
++\fI/etc/yum/pluginconf\.d/ovl\.conf\fR Configuration file allowing to enable/disable the plugin
++.
++.SH "AUTHOR"
++Pavel Odvody \fIpodvody@redhat\.com\fR
++.
++.SH "LICENSE"
++2015, Red Hat, Licensed under GPLv2+
++.
++.SH "SEE ALSO"
++yum(1) yum(8)
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+index 400d3c7..3d547ed 100644
+--- a/plugins/ovl/ovl.py
++++ b/plugins/ovl/ovl.py
+@@ -3,7 +3,6 @@ from os import walk, path, fstat
+ 
+ requires_api_version = '2.3'
+ plugin_type = (TYPE_CORE,)
+-mtab = '/etc/mtab'
+ VERBOSE_DEBUGLEVEL = 3
+ 
+ 
+@@ -49,23 +48,7 @@ def do_detect_copy_up(files):
+     return len(diff) - num_files
+ 
+ 
+-def should_touch():
+-    """ 
+-    Touch the files only once we've verified that
+-    we're on overlay mount
+-    """
+-    if not path.exists(mtab):
+-        return False
+-    with open(mtab, 'r') as f:
+-        line = f.readline()
+-        return line.startswith('overlay / overlay')
+-    return False
+-
+-
+ def prereposetup_hook(conduit):
+-    if not should_touch():
+-        return
+-
+     rpmdb_path = conduit.getRpmDB()._rpmdbpath
+ 
+     try:
+commit 3980742eb6477c5bd5366222fb033cfc5c95d260
+Author: Pavel Odvody <podvody@redhat.com>
+Date:   Fri Sep 4 10:38:32 2015 +0200
+
+    Added manpage description and reference to rpmdb
+
+diff --git a/docs/yum-ovl.1 b/docs/yum-ovl.1
+index ddfbfab..33e0dfb 100644
+--- a/docs/yum-ovl.1
++++ b/docs/yum-ovl.1
+@@ -6,6 +6,21 @@ yum\-ovl \- Performs an initial copy\-up of yum(8) package database\.
+ .SH "OPTIONS"
+ \fB\-d\fR \fIdebug\-level\fR If debug level is \fI2\fR and more, print out the number of files copied up from the lower layer
+ .
++.SH "DESCRIPTION"
++Opening a file on OverlayFS in read\-only mode causes the file from
++.br
++lower layer to be opened, then later on, if the same file is opened 
++.br
++in write mode, a copy-up into the upper    layer    takes    place, 
++.br
++resulting into a \fBnew\fR file being opened\.
++.br
++Since yum(8) needs to open the \fBRPMdb\fR first read-only, and then
++.br
++also with write access, we need to copy-up the files beforehand to 
++.br
++make sure that the access is consistent.
++.
+ .SH "FILES"
+ \fI/usr/lib/yum\-plugins/ovl\.py\fR Plugin itself
+ .
+@@ -19,4 +34,4 @@ Pavel Odvody \fIpodvody@redhat\.com\fR
+ 2015, Red Hat, Licensed under GPLv2+
+ .
+ .SH "SEE ALSO"
+-yum(1) yum(8)
++yum(1) yum(8) rpmdb(8)
+diff -up yum-utils-1.1.31/docs/Makefile.old yum-utils-1.1.31/docs/Makefile
+--- yum-utils-1.1.31/docs/Makefile.old	2015-09-04 17:10:03.460207371 +0200
++++ yum-utils-1.1.31/docs/Makefile	2015-09-04 17:10:19.167260413 +0200
+@@ -3,7 +3,7 @@ DOCS = repoquery package-cleanup repo-rs
+        yum-groups-manager debuginfo-install repodiff yum-fs-snapshot \
+        show-installed show-changed-rco yum-debug-restore \
+        find-repos-of-install needs-restarting repo-graph repoclosure \
+-       repomanage repotrack verifytree yum-config-manager
++       repomanage repotrack verifytree yum-config-manager yum-ovl
+ DOCS5 = yum-changelog.conf yum-versionlock.conf yum-fs-snapshot.conf
+ DOCS8 = yum-complete-transaction yumdb
+ 
+commit d03fce57c1fa3f9dff6fdd9867cbcaf66df9f841
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Fri Oct 9 15:16:33 2015 +0200
+
+    ovl plugin: run at init_hook stage
+
+diff --git a/plugins/ovl/ovl.py b/plugins/ovl/ovl.py
+index 3d547ed..fe27022 100644
+--- a/plugins/ovl/ovl.py
++++ b/plugins/ovl/ovl.py
+@@ -47,9 +47,8 @@ def do_detect_copy_up(files):
+     diff = set(lower + upper)
+     return len(diff) - num_files
+ 
+-
+-def prereposetup_hook(conduit):
+-    rpmdb_path = conduit.getRpmDB()._rpmdbpath
++def init_hook(conduit):
++    rpmdb_path = conduit._base.rpmdb._rpmdbpath
+ 
+     try:
+         files = list(get_file_list(rpmdb_path))

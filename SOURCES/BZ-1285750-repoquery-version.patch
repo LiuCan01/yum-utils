@@ -1,0 +1,19 @@
+commit 624cf40406a2e8bacde8afde807d5efbf74ca4ab
+Author: James Antill <james@and.org>
+Date:   Thu Dec 5 16:43:04 2013 -0500
+
+    Remove -v from repoquery man page.
+
+diff --git a/docs/repoquery.1 b/docs/repoquery.1
+index 30fda8a..85b0047 100644
+--- a/docs/repoquery.1
++++ b/docs/repoquery.1
+@@ -14,7 +14,7 @@ similarly to rpm queries.
+ .SH "GENERAL OPTIONS"
+ .IP "\fB\-\-querytags\fP"
+ List valid queryformat tags and exit..
+-.IP "\fB\-v, \-\-version\fP" 
++.IP "\fB\-\-version\fP"
+ Report program version and exit.
+ .IP "\fB\-\-repoid=<repo>\fP"
+ Specify which repository to query. Using this option disables all repositories

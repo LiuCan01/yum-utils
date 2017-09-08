@@ -1,0 +1,52 @@
+commit 2f1605f65e6bc24d6a2515b99f1486085f281a49
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue Mar 1 16:18:39 2016 +0100
+
+    debuginfo-install: install debuginfo only for the latest installed version of installonly package. BZ#1293707
+
+diff --git a/debuginfo-install.py b/debuginfo-install.py
+index bb61a1d..19fe8b6 100755
+--- a/debuginfo-install.py
++++ b/debuginfo-install.py
+@@ -148,9 +148,12 @@ class DebugInfoInstall(YumUtilBase):
+         # add that debuginfo to the ts
+         # look through that pkgs' deps
+         # add all the debuginfos for the pkgs providing those deps
++        installonly_added = set()
+         for pkgglob in self.cmds:
+             e, m, u = self.rpmdb.matchPackageNames([pkgglob])
+-            for po in e + m:
++            for po in sorted(e + m, reverse=True):
++                if po.name in installonly_added:
++                    continue
+                 try:
+                     self.di_try_install(po)
+                 except yum.Errors.InstallError, e:
+@@ -167,6 +170,8 @@ class DebugInfoInstall(YumUtilBase):
+                                 self.di_try_install(deppo)
+                             except yum.Errors.InstallError, e:
+                                 self.logger.critical('Could not find debuginfo pkg for dependency package %s' % deppo)
++                if po.name in self.conf.installonlypkgs:
++                    installonly_added.add(po.name)
+ 
+         for pkgname in u:
+             self.logger.critical('Could not find a package for: %s' % pkgname)
+commit 8048d25bf3225b8ddd7d0a90b050bce2cc716e2a
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue Jun 21 14:24:12 2016 +0200
+
+    debuginfo-install: also respect provides when testing for installonly.
+
+diff --git a/debuginfo-install.py b/debuginfo-install.py
+index 19fe8b6..6053f62 100755
+--- a/debuginfo-install.py
++++ b/debuginfo-install.py
+@@ -170,7 +170,7 @@ class DebugInfoInstall(YumUtilBase):
+                                 self.di_try_install(deppo)
+                             except yum.Errors.InstallError, e:
+                                 self.logger.critical('Could not find debuginfo pkg for dependency package %s' % deppo)
+-                if po.name in self.conf.installonlypkgs:
++                if self.allowedMultipleInstalls(po):
+                     installonly_added.add(po.name)
+ 
+         for pkgname in u:

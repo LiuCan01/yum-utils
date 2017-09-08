@@ -1,0 +1,15 @@
+diff -up yum-utils-1.1.31/reposync.py.old yum-utils-1.1.31/reposync.py
+--- yum-utils-1.1.31/reposync.py.old	2014-09-24 09:47:05.000000000 +0200
++++ yum-utils-1.1.31/reposync.py	2014-09-24 09:52:46.147944904 +0200
+@@ -293,7 +293,10 @@ def main():
+         download_list.sort(sortPkgObj)
+         if opts.urls:
+             for pkg in download_list:
+-                print urljoin(pkg.repo.urls[0], pkg.relativepath)
++                remote = pkg.returnSimple('relativepath')
++                local = os.path.join(local_repo_path, remote)
++                if not (os.path.exists(local) and my.verifyPkg(local, pkg, False)):
++                    print urljoin(pkg.repo.urls[0], pkg.relativepath)
+             continue
+ 
+         # create dest dir

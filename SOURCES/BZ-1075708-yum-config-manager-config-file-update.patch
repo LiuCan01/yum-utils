@@ -1,0 +1,37 @@
+commit 2b617b86358aeedd3ed83fad0719cb0fada3241c
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue May 26 09:08:37 2015 +0200
+
+    yum-config-manager: update config file specified using -c option. BZ#1075708
+
+diff --git a/README b/README
+index 8abe805..0c01d0e 100644
+--- a/README
++++ b/README
+@@ -67,3 +67,5 @@ Author of the update on boot init scripts
+ - Tim Lauridsen
+ Maintainer of yum-utils - fixer of a lot of misc utils.
+ 
++- Valentina Mukhamedzhanova
++Maintainer of yum-utils.
+diff --git a/yum-config-manager.py b/yum-config-manager.py
+index 380a54f..708c33f 100755
+--- a/yum-config-manager.py
++++ b/yum-config-manager.py
+@@ -155,10 +155,13 @@ if (not args and not opts.addrepo) or 'main' in args:
+     print yb.fmtSection('main')
+     print yb.conf.dump()
+     if opts.save and hasattr(yb, 'main_setopts') and yb.main_setopts:
+-        fn = '/etc/yum/yum.conf'
++        fn = opts.conffile
+         if not os.path.exists(fn):
+-            # Try the old default
+-            fn = '/etc/yum.conf'
++            if fn == '/etc/yum/yum.conf':
++                # Try the old default
++                fn = '/etc/yum.conf'
++            else:
++                raise yum.Errors.ConfigError("Error accessing file for config %s" % fn)
+         ybc = yb.conf
+         writeRawConfigFile(fn, 'main', ybc.yumvar,
+                            ybc.cfg.options, ybc.iteritems, ybc.optionobj,

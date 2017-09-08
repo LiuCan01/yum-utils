@@ -1,0 +1,22 @@
+commit 84988d6ae0e3d6dad07cde3701a69f7717cf8962
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Fri May 13 12:19:33 2016 +0200
+
+    yum-config-manager: document syntax for enabling/disabling all repos.
+
+diff --git a/docs/yum-config-manager.1 b/docs/yum-config-manager.1
+index 81b895b..c130070 100644
+--- a/docs/yum-config-manager.1
++++ b/docs/yum-config-manager.1
+@@ -16,9 +16,9 @@ Display a help message, and then quit.
+ .IP "\fB\-\-save\fP"
+ Save the current options (useful with \-\-setopt).
+ .IP "\fB\-\-enable\fP"
+-Enable the specified repos (automatically saves).
++Enable the specified repos (automatically saves). To enable all repositories run 'yum-config-manager --enable \\*".
+ .IP "\fB\-\-disable\fP"
+-Disable the specified repos (automatically saves).
++Disable the specified repos (automatically saves). To disable all repositories run "yum-config-manager --disable \\*".
+ .IP "\fB\-\-add\-repo=ADDREPO\fP"
+ Add (and enable) the repo from the specified file or url.
+ .SH "ADDITIONAL OPTIONS"

@@ -1,0 +1,12 @@
+diff -up yum-utils-1.1.31/repoquery.py.old yum-utils-1.1.31/repoquery.py
+--- yum-utils-1.1.31/repoquery.py.old	2014-01-10 11:43:02.213877563 +0100
++++ yum-utils-1.1.31/repoquery.py	2014-01-10 11:45:52.755169727 +0100
+@@ -1412,7 +1412,7 @@ def main(args):
+     repoq.preconf.root = opts.installroot
+     try:
+         repoq.conf
+-    except YumBaseError, e:
++    except yum.Errors.YumBaseError, e:
+         repoq.logger.error(e)
+         sys.exit(1)
+ 

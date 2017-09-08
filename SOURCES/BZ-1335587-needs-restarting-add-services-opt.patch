@@ -1,0 +1,70 @@
+diff -up yum-utils-1.1.31/docs/needs-restarting.1.orig yum-utils-1.1.31/docs/needs-restarting.1
+--- yum-utils-1.1.31/docs/needs-restarting.1.orig	2016-08-04 12:22:33.765295008 +0200
++++ yum-utils-1.1.31/docs/needs-restarting.1	2016-08-04 12:24:52.076356702 +0200
+@@ -16,6 +16,8 @@ Display a help message, and then quit.
+ Show processes for my userid only.
+ .IP "\fB\-r, \-\-reboothint\fP"
+ Only report whether a full reboot is required (returns 1) or not (returns 0).
++.IP "\fB\-s, \-\-services\fP"
++List the affected systemd services only.
+ 
+ .PP
+ .SH "SEE ALSO"
+diff -up yum-utils-1.1.31/needs-restarting.py.orig yum-utils-1.1.31/needs-restarting.py
+--- yum-utils-1.1.31/needs-restarting.py.orig	2016-08-04 12:22:15.914287046 +0200
++++ yum-utils-1.1.31/needs-restarting.py	2016-08-04 12:24:22.235343391 +0200
+@@ -65,6 +65,8 @@ def parseargs(args):
+     parser.add_option("-r", "--reboothint", default=False, action="store_true",
+       help=('only report whether a full reboot is required (returns 1) or not '
+             '(returns 0)'))
++    parser.add_option("-s", "--services", default=False, action="store_true",
++      help='list the affected systemd services only')
+     
+     (opts, args) = parser.parse_args(args)
+     return (opts, args)
+@@ -106,6 +108,31 @@ def get_open_files(pid):
+             files.append(filename)
+     return files
+ 
++def get_service(pid):
++    """Return the systemd service to which the process belongs.
++
++    More details:
++    http://0pointer.de/blog/projects/systemd-for-admins-2.html
++    https://www.freedesktop.org/wiki/Software/systemd/FrequentlyAskedQuestions/
++    """
++
++    fname = '/proc/%s/cgroup' % pid
++    try:
++        with open(fname, 'r') as f:
++            groups = f.readlines()
++    except (IOError, OSError), e:
++        print >>sys.stderr, "Could not open %s" % fname
++        return None
++
++    for line in groups:
++        line = line.replace('\n', '')
++        hid, hsub, cgroup = line.split(':')
++        if hsub == 'name=systemd':
++            name = cgroup.split('/')[-1]
++            if name.endswith('.service'):
++                return name
++    return None
++
+ def main(args):
+     (opts, args)  = parseargs(args)
+ 
+@@ -189,6 +216,13 @@ def main(args):
+ 
+            
+             
++    if opts.services:
++        names = set([get_service(pid) for pid in needing_restart])
++        for name in names:
++            if name is not None:
++                print name
++        return 0
++
+     for pid in needing_restart:
+         try:
+             cmdline = open('/proc/' +pid+ '/cmdline', 'r').read()
