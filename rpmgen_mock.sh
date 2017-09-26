@@ -34,5 +34,5 @@ rm -rf ./RPMS/ ./SRPMS/
 # so we have to copyout the SRPMS and RPMS from chroot after each mock operation.
 /usr/bin/mock -r ${MOCK_CFG} --rootdir ${MOCK_CHROOT} --define "dist .el7.centos.es" --buildsrpm --spec ./SPECS/yum-utils.spec --sources ./SOURCES/
 /usr/bin/mock -r ${MOCK_CFG} --rootdir ${MOCK_CHROOT} --copyout /builddir/build/SRPMS/ ./SRPMS/
-/usr/bin/mock -r ${MOCK_CFG} --rootdir ${MOCK_CHROOT} --define "dist .el7.centos.es" --rebuild ./SRPMS/yum-utils-1.1.31-42.el7.centos.es.src.rpm
+/usr/bin/mock -r ${MOCK_CFG} --rootdir ${MOCK_CHROOT} --define "dist .el7.centos.es" --rebuild ./SRPMS/yum-utils-1.1.31-42.el7.centos.es.1.src.rpm
 /usr/bin/mock -r ${MOCK_CFG} --rootdir ${MOCK_CHROOT} --copyout /builddir/build/RPMS/ ./RPMS/
