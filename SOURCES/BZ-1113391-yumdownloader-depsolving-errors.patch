@@ -1,0 +1,23 @@
+commit 36280feaee2b0cfb83d8af134f6aff3bcc976af1
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Wed Apr 9 15:30:21 2014 +0200
+
+    Print depsolving errors in yumdownloader instead of ignoring them. BZ 998892
+
+diff --git a/yumdownloader.py b/yumdownloader.py
+index 1b57777..1b95e8d 100755
+--- a/yumdownloader.py
++++ b/yumdownloader.py
+@@ -197,7 +197,11 @@ class YumDownloader(YumUtilBase):
+                 self.tsInfo.addInstall(po)
+                 self.localPackages.append(po)
+             # Resolve dependencies
+-            self.resolveDeps()
++            result, resultmsgs = self.resolveDeps()
++            if result == 1:
++                for msg in resultmsgs:
++                    self.logger.critical(msg)
++                self.logger.critical('Dependency resolution failed, some packages will not be downloaded.')
+             # Add newly added packages to the toDownload list
+             for pkg in self.tsInfo.getMembers():
+                 if pkg.ts_state in ('i', 'u') and pkg.po not in toDownload:

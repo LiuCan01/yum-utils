@@ -1,0 +1,19 @@
+commit cd96c21e6c323e4c73555bbc1360a60fa2b9ddeb
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue Oct 14 18:52:04 2014 +0200
+
+    reposync: add --download-metadata to the man page. BZ 1079435
+
+diff --git a/docs/reposync.1 b/docs/reposync.1
+index d6d245a..ea5653c 100644
+--- a/docs/reposync.1
++++ b/docs/reposync.1
+@@ -41,6 +41,8 @@ Just list urls of what would be downloaded, don't download.
+ Enable yum plugin support.
+ .IP "\fB\-m, \-\-downloadcomps\fP"
+ Also download comps.xml.
++.IP "\fB\-\-download-metadata\fP"
++Download all the non-default metadata.
+ .IP "\fB\-n, \-\-newest\-only\fP"
+ Download only newest packages per-repo.
+ .IP "\fB\-q, \-\-quiet\fP"

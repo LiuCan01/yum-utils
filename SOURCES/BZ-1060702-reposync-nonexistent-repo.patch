@@ -1,0 +1,30 @@
+commit fbdc19f411ee31bf18af242e7b3b39947ed28f2d
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Thu Feb 13 15:30:23 2014 +0100
+
+     Fix 'reposync -r nosuchrepo' behaviour. BZ 1060702
+    
+    Show a warning if user-provided repoid was not found and
+    exit(1) if none of user-provided repoids were found.
+
+diff --git a/reposync.py b/reposync.py
+index b1ee285..e7c98a3 100755
+--- a/reposync.py
++++ b/reposync.py
+@@ -179,7 +179,15 @@ def main():
+         
+         # find the ones we want
+         for glob in opts.repoid:
+-            myrepos.extend(my.repos.findRepos(glob))
++            add_repos = my.repos.findRepos(glob)
++            if not add_repos:
++                print >> sys.stderr, "Warning: cannot find repository %s" % glob
++                continue
++            myrepos.extend(add_repos)
++
++        if not myrepos:
++            print >> sys.stderr, "No repositories found"
++            sys.exit(1)
+         
+         # disable them all
+         for repo in my.repos.repos.values():

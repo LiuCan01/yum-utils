@@ -1,0 +1,38 @@
+commit 682227430bb2124fb2897371fa5bc5261099064a
+Author: Zdenek Pavlas <zpavlas@redhat.com>
+Date:   Mon Sep 9 15:15:35 2013 +0200
+
+    yumdownloader: make --destdir less of a hack. BZ 1004089
+    
+    Instead of changing po.localpath, use the conf.downloaddir option
+    already used to override repo.pkgdir(s).
+
+diff --git a/yumdownloader.py b/yumdownloader.py
+index 4c5eefb..b491c7f 100755
+--- a/yumdownloader.py
++++ b/yumdownloader.py
+@@ -96,6 +96,9 @@ class YumDownloader(YumUtilBase):
+         if not self.setCacheDir():
+             self.logger.error("Error: Could not make cachedir, exiting")
+             sys.exit(50)
++
++        # override all pkgdirs
++        self.conf.downloaddir = opts.destdir
+             
+         # Setup yum (Ts, RPM db, Repo & Sack)
+         self.doUtilYumSetup(opts)
+@@ -202,14 +205,8 @@ class YumDownloader(YumUtilBase):
+                 print urljoin(pkg.repo.urls[0], pkg.relativepath)
+             return 0
+ 
+-        # create dest dir
+-        if not os.path.exists(opts.destdir):
+-            os.makedirs(opts.destdir)
+-
+         # set localpaths
+         for pkg in toDownload:
+-            rpmfn = os.path.basename(pkg.remote_path)
+-            pkg.localpath = os.path.join(opts.destdir, rpmfn)
+             pkg.repo.copy_local = True
+             pkg.repo.cache = 0
+ 

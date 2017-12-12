@@ -1,0 +1,70 @@
+diff -up yum-utils-1.1.31/docs/needs-restarting.1.orig yum-utils-1.1.31/docs/needs-restarting.1
+--- yum-utils-1.1.31/docs/needs-restarting.1.orig	2016-08-04 12:17:58.638041851 +0200
++++ yum-utils-1.1.31/docs/needs-restarting.1	2016-08-04 12:18:37.479777824 +0200
+@@ -14,6 +14,8 @@ started running before they or some comp
+ Display a help message, and then quit.
+ .IP "\fB\-u, \-\-useronly\fP"
+ Show processes for my userid only.
++.IP "\fB\-r, \-\-reboothint\fP"
++Only report whether a full reboot is required (returns 1) or not (returns 0).
+ 
+ .PP
+ .SH "SEE ALSO"
+diff -up yum-utils-1.1.31/needs-restarting.py.orig yum-utils-1.1.31/needs-restarting.py
+--- yum-utils-1.1.31/needs-restarting.py.orig	2016-08-04 12:17:41.397159047 +0200
++++ yum-utils-1.1.31/needs-restarting.py	2016-08-04 12:19:22.944468776 +0200
+@@ -48,6 +48,11 @@ from yum.Errors import RepoError
+ sys.path.insert(0,'/usr/share/yum-cli')
+ import utils
+ 
++# For which package updates we should recommend a reboot
++# Taken from https://access.redhat.com/solutions/27943
++REBOOTPKGS = ['kernel', 'glibc', 'linux-firmware', 'systemd', 'udev',
++              'openssl-libs', 'gnutls', 'dbus']
++
+ def parseargs(args):
+     usage = """
+     needs-restarting: Report a list of process ids of programs that started 
+@@ -57,6 +62,9 @@ def parseargs(args):
+     
+     parser.add_option("-u", "--useronly", default=False, action="store_true",
+       help='show processes for my userid only')
++    parser.add_option("-r", "--reboothint", default=False, action="store_true",
++      help=('only report whether a full reboot is required (returns 1) or not '
++            '(returns 0)'))
+     
+     (opts, args) = parser.parse_args(args)
+     return (opts, args)
+@@ -111,9 +119,30 @@ def main(args):
+     if opts.useronly:
+         myuid = os.getuid()
+     
+-    needing_restart = set()
+-
+     boot_time = utils.get_boot_time()
++
++    if opts.reboothint:
++        needing_reboot = set()
++        for pkg in my.rpmdb.searchNames(REBOOTPKGS):
++            if float(pkg.installtime) > float(boot_time):
++                needing_reboot.add(pkg)
++        if needing_reboot:
++            print 'Core libraries or services have been updated:'
++            for pkg in needing_reboot:
++                print '  %s ->' % pkg.name, pkg.printVer()
++            print
++            print 'Reboot is required to ensure that your system benefits',
++            print 'from these updates.'
++            print
++            print 'More information:'
++            print 'https://access.redhat.com/solutions/27943'
++            return 1
++        else:
++            print 'No core libraries or services have been updated.'
++            print 'Reboot is probably not necessary.'
++            return 0
++
++    needing_restart = set()
+     for pid in return_running_pids(uid=myuid):
+         try:
+             pid_start = utils.get_process_time(int(pid), boot_time)['start_time']

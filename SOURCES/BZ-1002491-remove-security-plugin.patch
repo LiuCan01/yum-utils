@@ -1,0 +1,1182 @@
+commit a5c7a3011bb9d2497c980791111389d226445281
+Author: Zdenek Pavlas <zpavlas@redhat.com>
+Date:   Thu Oct 3 14:15:11 2013 +0200
+
+    remove yum-plugin-security. BZ 1002491
+    
+    This functionality is now implemented in core (yum updateinfo).
+
+diff --git a/docs/Makefile b/docs/Makefile
+index acb8559..481f0f3 100644
+--- a/docs/Makefile
++++ b/docs/Makefile
+@@ -5,7 +5,7 @@ DOCS = repoquery package-cleanup repo-rss yumdownloader yum-builddep yum-changel
+        find-repos-of-install needs-restarting repo-graph repoclosure \
+        repomanage repotrack verifytree yum-config-manager
+ DOCS5 = yum-changelog.conf yum-versionlock.conf yum-fs-snapshot.conf
+-DOCS8 = yum-security yum-complete-transaction yumdb
++DOCS8 = yum-complete-transaction yumdb
+ 
+ all:
+ 	echo "Nothing to do"
+diff --git a/docs/yum-security.8 b/docs/yum-security.8
+deleted file mode 100644
+index c7d9c8b..0000000
+--- a/docs/yum-security.8
++++ /dev/null
+@@ -1,190 +0,0 @@
+-.\" yum security plugin
+-.TH "yum-security" "8" "12 April 2007" "James Antill" ""
+-.SH "NAME"
+-yum security plugin
+-.SH "SYNOPSIS"
+-\fByum\fP [options] [command] [package ...]
+-.SH "DESCRIPTION"
+-.PP 
+-This plugin extends \fByum\fP to allow lists and updates to be limited using security relevant criteria.
+-.PP 
+-Added yum \fIcommand\fPs are:
+-.br 
+-.I \fR yum update-minimal
+-.PP 
+-This works like the update command, but if you have the package foo-1
+-installed and have foo-2 and foo-3 available with updateinfo.xml then
+-update-minimal will update you to foo-3.
+-.br 
+-.I \fR yum updateinfo info
+-.br 
+-.I \fR yum updateinfo list
+-.br 
+-.I \fR yum updateinfo summary
+-.PP 
+-All of the last three take these \fIsub-command\fPs:
+-.br 
+-.I \fR yum updateinfo * all
+-.br 
+-.I \fR yum updateinfo * available
+-.br 
+-.I \fR yum updateinfo * installed
+-.br 
+-.I \fR yum updateinfo * updates
+-.PP 
+-and then:
+-.br 
+-.I \fR * <advisory> [advisory...]
+-.br 
+-.I \fR * <package>
+-.br 
+-.I \fR * bugzillas
+-.br 
+-.I \fR * cves
+-.br 
+-.I \fR * enhancement
+-.br 
+-.I \fR * security
+-.br 
+-.I \fR * new-packages
+-.br 
+-.br 
+-.PP
+-.IP "\fBall\fP"
+-Is used to display information about both install and available advisories.
+-.PP
+-.IP "\fBavailable\fP"
+-Is used to display information about just available advisories. This is the
+-default.
+-.PP
+-.IP "\fBinstalled\fP"
+-Is used to display information about just install advisories.
+-.PP
+-.IP "\fBupdates\fP"
+-This is mostly the same as "available" but it only shows advisory information
+-for packages that can be updated to.
+-.PP
+-.IP "\fB<advisory> [advisory...]\fP"
+-Is used to display information about one or more advisories.
+-.PP 
+-.IP "\fB<package> [package...]\fP"
+-Is used to display information about one or more packages.
+-.PP 
+-.IP "\fBlist\fP"
+-Is used to list all of the relevant errata notice information, from the
+-updateinfo.xml data in yum. This includes bugzillas, CVEs, security updates and
+-new.
+-.PP 
+-.IP "\fBinfo\fP"
+-Is used to show all the errata notice information, from the
+-updateinfo.xml data in yum. This includes bugzillas, CVEs, security updates and
+-new.
+-.PP 
+-.IP "\fBlist\fP"
+-Is used to list all of the relevant errata notice information, from the
+-updateinfo.xml data in yum. This includes bugzillas, CVEs, security updates and
+-new.
+-.IP 
+-.IP "\fBbugzillas / bzs\fP"
+-Is the subset of the updateinfo information, pertaining to the bugzillas.
+-.IP 
+-.IP "\fBcves\fP"
+-Is the subset of the updateinfo information, pertaining to the CVEs.
+-.IP 
+-.IP "\fBsecurity / sec\fP"
+-Is the subset of the updateinfo information, pertaining to security.
+-.IP "\fBbugfix\fP"
+-Is the subset of the updateinfo information, pertaining to bugfixes.
+-.IP "\fBenhancement\fP"
+-Is the subset of the updateinfo information, pertaining to enhancements.
+-.IP "\fBrecommended\fP"
+-Is the subset of the updateinfo information, pertaining to recommended updates.
+-.IP "\fBnew-packages\fP"
+-Is the subset of the updateinfo information, pertaining to new packages. These
+-are packages which weren't available at the initial release of your
+-distribution.
+-.IP
+-.PP
+-.SH "GENERAL OPTIONS"
+-There are four options added to yum that are available in the "list updates", "info updates", "check-update" and "update" commands. They are:
+-.PP 
+-.IP "\fB\-\-advisory\fP"
+-This option includes packages corresponding to the advisory ID, Eg. FEDORA-2201-123.
+-.IP "\fB\-\-bz\fP"
+-This option includes packages that say they fix a Bugzilla ID, Eg. 123.
+-.IP "\fB\-\-cve\fP"
+-This option includes packages that say they fix a CVE - Common Vulnerabilities and Exposures ID (http://cve.mitre.org/about/), Eg. CVE-2201-0123.
+-.IP "\fB\-\-bugfixes\fP"
+-This option includes packages that say they fix a bugfix issue.
+-.IP "\fB\-\-security\fP"
+-This option includes packages that say they fix a security issue.
+-.PP
+-.PP
+-
+-.SH "EXAMPLES"
+-.PP
+-To list all updates that are security relevant, and get a return code on whether there are security updates use:
+-.IP
+-yum \-\-security check-update
+-.PP
+-To upgrade packages that have security errata (upgrades to the latest
+-available package) use:
+-.IP
+-yum \-\-security update
+-.PP
+-To upgrade packages that have security errata (upgrades to the last
+-security errata package) use:
+-.IP
+-yum \-\-security update-minimal
+-.PP
+-To get a list of all BZs that are fixed for packages you have installed use:
+-.IP
+-yum updateinfo list bugzillas
+-.PP
+-To get a list of all security advisories, including the ones you have already
+-installed use:
+-.IP
+-yum updateinfo list all security
+-.PP
+-To get the information on advisory FEDORA-2707-4567 use:
+-.IP
+-yum updateinfo info FEDORA-2707-4567
+-.PP
+-To update packages to the latest version which contain fixes for Bugzillas 123, 456 and 789; and all security updates use:
+-.IP
+-yum \-\-bz 123 \-\-bz 456 \-\-bz 789 \-\-security update
+-.PP
+-To update to the packages which just update Bugzillas 123, 456 and 789; and all security updates use:
+-.IP
+-yum \-\-bz 123 \-\-bz 456 \-\-bz 789 \-\-security update-minimal
+-.PP
+-To get an info list of the latest packages which contain fixes for Bugzilla 123; CVEs CVE-2207-0123 and CVE-2207-3210; and Fedora advisories FEDORA-2707-4567 and FEDORA-2707-7654 use:
+-.IP
+-yum \-\-bz 123 \-\-cve CVE-2207-0123 \-\-cve CVE-2207-3210 \-\-advisory FEDORA-2707-4567 \-\-advisory FEDORA-2707-7654 info updates
+-.PP
+-To get a list of packages which are "new".
+-.IP
+-yum updateinfo list new
+-.PP
+-To get a summary of advisories you haven't installed yet use:
+-.IP
+-yum updateinfo summary
+-
+-
+-.SH "SEE ALSO"
+-.nf
+-.I yum (8)
+-.I yum.conf (5)
+-.fi
+-
+-.SH "AUTHORS"
+-.nf
+-James Antill <james.antill@redhat.com>.
+-.fi
+-
+-.SH "BUGS"
+-The update-minimal command ignores the \-\-obsoletes flag.
+-
+-The update-minimal command can only directly affect things atm., so if you update pkgA minimally but that requires an update to pkgB then pkgB will be updated to the newest version by the depsolver. Also the above will happen even if you've also minimally updated pkgB, if either the direct (minimal) update for pkgB happens after or if the minimal update for pkgB doesn't satisfy the requirements of pkgA.
+-
+-The main "problem" is that if the data is not correct the plugin cannot work correctly. For instance "\-\-bz 123" will not fix BZ 123 if a package is updated to fix that BZ without referencing that it does so in the updateinfo.xml.
+diff --git a/plugins/security/security.conf b/plugins/security/security.conf
+deleted file mode 100644
+index 8e4d76c..0000000
+--- a/plugins/security/security.conf
++++ /dev/null
+@@ -1,2 +0,0 @@
+-[main]
+-enabled=1
+diff --git a/plugins/security/security.py b/plugins/security/security.py
+deleted file mode 100755
+index a60cf9b..0000000
+--- a/plugins/security/security.py
++++ /dev/null
+@@ -1,892 +0,0 @@
+-#! /usr/bin/python -tt
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+-#
+-#
+-# Copyright Red Hat Inc. 2007, 2008
+-#
+-# Author: James Antill <james.antill@redhat.com>
+-#
+-# Examples:
+-#
+-#  yum --security info updates
+-#  yum --security list updates
+-#  yum --security check-update
+-#  yum --security update
+-#
+-# yum --cve CVE-2007-1667      <cmd>
+-# yum --bz  235374 --bz 234688 <cmd>
+-# yum --advisory FEDORA-2007-420 --advisory FEDORA-2007-346 <cmd>
+-#
+-# yum list-updateinfo
+-# yum list-updateinfo bugzillas / bzs
+-# yum list-updateinfo cves
+-# yum list-updateinfo security / sec
+-# yum list-updateinfo new
+-#
+-# yum summary-updateinfo
+-#
+-# yum update-minimal --security
+-
+-import yum
+-import fnmatch
+-from yum.plugins import TYPE_INTERACTIVE
+-from yum.update_md import UpdateMetadata
+-import logging # for commands
+-
+-from yum.constants import *
+-
+-import rpmUtils.miscutils
+-
+-requires_api_version = '2.5'
+-plugin_type = (TYPE_INTERACTIVE,)
+-__package_name__ = "yum-plugin-security"
+-
+-# newpackages is weird, in that we'll never display that because we filter to
+-# things relevant to installed pkgs...
+-__update_info_types__ = ("security", "bugfix", "enhancement",
+-                         "recommended", "newpackage")
+-
+-def _rpm_tup_vercmp(tup1, tup2):
+-    """ Compare two "std." tuples, (n, a, e, v, r). """
+-    return rpmUtils.miscutils.compareEVR((tup1[2], tup1[3], tup1[4]),
+-                                         (tup2[2], tup2[3], tup2[4]))
+-
+-class CliError(yum.Errors.YumBaseError):
+-
+-    """
+-    Command line interface related Exception.
+-    """
+-
+-    def __init__(self, args=''):
+-        yum.Errors.YumBaseError.__init__(self)
+-        self.args = args
+-
+-def ysp_gen_metadata(repos):
+-    """ Generate the info. from the updateinfo.xml files. """
+-    md_info = UpdateMetadata()
+-    for repo in repos:
+-        if not repo.enabled:
+-            continue
+-        
+-        try: # attempt to grab the updateinfo.xml.gz from the repodata
+-            md_info.add(repo)
+-        except yum.Errors.RepoMDError:
+-            continue # No metadata found for this repo
+-    return md_info
+-
+-def ysp__safe_refs(refs):
+-    """ Sometimes refs == None, if so return the empty list here. 
+-        So we don't have to check everywhere. """
+-    if refs == None:
+-        return []
+-    return refs
+-
+-def _match_sec_cmd(sec_cmds, pkgname, notice):
+-    for i in sec_cmds:
+-        if fnmatch.fnmatch(pkgname, i):
+-            return i
+-        if notice['update_id'] == i:
+-            return i
+-    return None
+-
+-def _has_id(used_map, refs, ref_type, ref_ids):
+-    ''' Check if the given ID is a match. '''
+-    for ref in ysp__safe_refs(refs):
+-        if ref['type'] != ref_type:
+-            continue
+-        if ref['id'] not in ref_ids:
+-            continue
+-        used_map[ref_type][ref['id']] = True
+-        return ref
+-    return None
+-    
+-def ysp_should_filter_pkg(opts, pkgname, notice, used_map):
+-    """ Do the package filtering for should_show and should_keep. """
+-    
+-    rcmd = _match_sec_cmd(opts.sec_cmds, pkgname, notice)
+-    if rcmd:
+-        used_map['cmd'][rcmd] = True
+-        return True
+-    elif opts.advisory and notice['update_id'] in opts.advisory:
+-        used_map['id'][notice['update_id']] = True
+-        return True
+-    elif (opts.severity and notice['type'] == 'security' and
+-          notice['severity'] in opts.severity):
+-        used_map['sev'][notice['severity']] = True
+-        return True
+-    elif opts.cve and _has_id(used_map, notice['references'], "cve", opts.cve):
+-        return True
+-    elif opts.bz and _has_id(used_map, notice['references'],"bugzilla",opts.bz):
+-        return True
+-    # FIXME: Add opts for enhancement/etc.? -- __update_info_types__
+-    elif (opts.security and notice['type'] == 'security' and
+-          (not opts.severity or 'severity' not in notice or
+-           not notice['severity'])):
+-        return True
+-    elif opts.bugfixes and notice['type'] == 'bugfix':
+-        return True
+-    elif not (opts.advisory or opts.cve or opts.bz or
+-              opts.security or opts.bugfixes or opts.sec_cmds or opts.severity):
+-        return True # This is only possible from should_show_pkg
+-    return False
+-
+-def ysp_has_info_md(rname, md):
+-    if rname in __update_info_types__:
+-        if md['type'] == rname:
+-            return md
+-    for ref in ysp__safe_refs(md['references']):
+-        if ref['type'] != rname:
+-            continue
+-        return md
+-
+-def ysp_gen_used_map(opts):
+-    used_map = {'bugzilla' : {}, 'cve' : {}, 'id' : {}, 'cmd' : {}, 'sev' : {}}
+-    for i in opts.sec_cmds:
+-        used_map['cmd'][i] = False
+-    for i in opts.advisory:
+-        used_map['id'][i] = False
+-    for i in opts.bz:
+-        used_map['bugzilla'][i] = False
+-    for i in opts.cve:
+-        used_map['cve'][i] = False
+-    for i in opts.severity:
+-        used_map['sev'][i] = False
+-    return used_map
+-
+-def ysp_chk_used_map(used_map, msg):
+-    for i in used_map['cmd']:
+-        if not used_map['cmd'][i]:
+-            msg('No update information found for \"%s\"' % i)
+-    for i in used_map['id']:
+-        if not used_map['id'][i]:
+-            msg('Advisory \"%s\" not found applicable for this system' % i)
+-    for i in used_map['bugzilla']:
+-        if not used_map['bugzilla'][i]:
+-            msg('BZ \"%s\" not found applicable for this system' % i)
+-    for i in used_map['cve']:
+-        if not used_map['cve'][i]:
+-            msg('CVE \"%s\" not found applicable for this system' % i)
+-    for i in used_map['sev']:
+-        if not used_map['sev'][i]:
+-            msg('Severity \"%s\" not found applicable for this system' % i)
+-
+-class UpdateinfoCommand:
+-    # Old command names...
+-    direct_cmds = {'list-updateinfo'    : 'list',
+-                   'list-security'      : 'list',
+-                   'list-sec'           : 'list',
+-                   'info-updateinfo'    : 'info',
+-                   'info-security'      : 'info',
+-                   'info-sec'           : 'info',
+-                   'summary-updateinfo' : 'summary'}
+-
+-    #  Note that this code (instead of using inheritance and multiple
+-    # cmd classes) means that "yum help" only displays the updateinfo command.
+-    # Which is what we want, because the other commands are just backwards
+-    # compatible gunk we don't want the user using).
+-    def getNames(self):
+-        return ['updateinfo'] + sorted(self.direct_cmds.keys())
+-
+-    def getUsage(self):
+-        return "[info|list|...] [security|...] [installed|available|all] [pkgs|id]"
+-
+-    def getSummary(self):
+-        return "Acts on repository update information"
+-
+-    def doCheck(self, base, basecmd, extcmds):
+-        pass
+-
+-    def list_show_pkgs(self, base, md_info, list_type, show_type,
+-                       iname2tup, data, msg):
+-        n_maxsize = 0
+-        r_maxsize = 0
+-        t_maxsize = 0
+-        for (notice, pkgtup, pkg) in data:
+-            n_maxsize = max(len(notice['update_id']), n_maxsize)
+-            tn = notice['type']
+-            if tn == 'security' and notice['severity']:
+-                tn = notice['severity'] + '/Sec.'
+-            t_maxsize = max(len(tn),                  t_maxsize)
+-            if show_type:
+-                for ref in ysp__safe_refs(notice['references']):
+-                    if ref['type'] != show_type:
+-                        continue
+-                    r_maxsize = max(len(str(ref['id'])), r_maxsize)
+-
+-        for (notice, pkgtup, pkg) in data:
+-            mark = ''
+-            if list_type == 'all':
+-                mark = '  '
+-                if _rpm_tup_vercmp(iname2tup[pkgtup[0]], pkgtup) >= 0:
+-                    mark = 'i '
+-            tn = notice['type']
+-            if tn == 'security' and notice['severity']:
+-                tn = notice['severity'] + '/Sec.'
+-
+-            if show_type and ysp_has_info_md(show_type, notice):
+-                for ref in ysp__safe_refs(notice['references']):
+-                    if ref['type'] != show_type:
+-                        continue
+-                    msg("%s %-*s %-*s %s" % (mark, r_maxsize, str(ref['id']),
+-                                             t_maxsize, tn, pkg))
+-            elif hasattr(pkg, 'name'):
+-                print base.fmtKeyValFill("%s: " % pkg.name,
+-                                         base._enc(pkg.summary))
+-            else:
+-                msg("%s%-*s %-*s %s" % (mark, n_maxsize, notice['update_id'],
+-                                        t_maxsize, tn, pkg))
+-
+-    def info_show_pkgs(self, base, md_info, list_type, show_type,
+-                       iname2tup, data, msg):
+-        show_pkg_info_done = {}
+-        for (notice, pkgtup, pkg) in data:
+-            if notice['update_id'] in show_pkg_info_done:
+-                continue
+-            show_pkg_info_done[notice['update_id']] = notice
+-
+-            if hasattr(notice, 'text'):
+-                debug_log_lvl = yum.logginglevels.DEBUG_3
+-                vlog = logging.getLogger("yum.verbose.main")
+-                if vlog.isEnabledFor(debug_log_lvl):
+-                    obj = notice.text(skip_data=[])
+-                else:
+-                    obj = notice.text()
+-            else:
+-                # Python-2.4.* doesn't understand str(x) returning unicode
+-                obj = notice.__str__()
+-
+-            if list_type == 'all':
+-                if _rpm_tup_vercmp(iname2tup[pkgtup[0]], pkgtup) >= 0:
+-                    obj = obj + "\n  Installed : true"
+-                else:
+-                    obj = obj + "\n  Installed : false"
+-            msg(obj)
+-
+-    def summary_show_pkgs(self, base, md_info, list_type, show_type,
+-                          iname2tup, data, msg):
+-        def _msg(x):
+-            print x
+-        counts = {}
+-        sev_counts = {}
+-        show_pkg_info_done = {}
+-        for (notice, pkgtup, pkg) in data:
+-            if notice['update_id'] in show_pkg_info_done:
+-                continue
+-            show_pkg_info_done[notice['update_id']] = notice
+-            counts[notice['type']] = counts.get(notice['type'], 0) + 1
+-            if notice['type'] == 'security':
+-                sev = notice['severity']
+-                if sev is None:
+-                    sev = ''
+-                sev_counts[sev] = sev_counts.get(sev, 0) + 1
+-
+-        maxsize = 0
+-        for T in ('newpackage', 'security', 'bugfix', 'enhancement'):
+-            if T not in counts:
+-                continue
+-            size = len(str(counts[T]))
+-            if maxsize < size:
+-                maxsize = size
+-        if not maxsize:
+-            _check_running_kernel(base, md_info, _msg)
+-            return
+-
+-        outT = {'newpackage' : 'New Package',
+-                'security' : 'Security',
+-                'bugfix' : 'Bugfix',
+-                'enhancement' : 'Enhancement'}
+-        print "Updates Information Summary:", list_type
+-        for T in ('newpackage', 'security', 'bugfix', 'enhancement'):
+-            if T not in counts:
+-                continue
+-            n = outT[T]
+-            if T == 'security' and len(sev_counts) == 1:
+-                sn = sev_counts.keys()[0]
+-                if sn != '':
+-                    n = sn + " " + n
+-            print "    %*u %s notice(s)" % (maxsize, counts[T], n)
+-            if T == 'security' and len(sev_counts) != 1:
+-                def _sev_sort_key(key):
+-                    # We want these in order, from "highest" to "lowest".
+-                    # Anything unknown is "higher". meh.
+-                    return {'Critical' : "zz1",
+-                            'Important': "zz2",
+-                            'Moderate' : "zz3",
+-                            'Low'      : "zz4",
+-                            }.get(key, key)
+-
+-                for sn in sorted(sev_counts, key=_sev_sort_key):
+-                    args = (maxsize, sev_counts[sn],sn or '?', outT['security'])
+-                    print "        %*u %s %s notice(s)" % args
+-        _check_running_kernel(base, md_info, _msg)
+-        self.show_pkg_info_done = {}
+-
+-    def _get_new_pkgs(self, md_info):
+-        for notice in md_info.notices:
+-            if notice['type'] != "newpackage":
+-                continue
+-            for upkg in notice['pkglist']:
+-                for pkg in upkg['packages']:
+-                    pkgtup = (pkg['name'], pkg['arch'], pkg['epoch'] or '0',
+-                              pkg['version'], pkg['release'])
+-                    yield (notice, pkgtup)
+-
+-    _cmd2filt = {"bugzillas" : "bugzilla",
+-                 "bugzilla" : "bugzilla",
+-                 "bzs" : "bugzilla",
+-                 "bz" : "bugzilla",
+-
+-                 "sec" : "security",
+-
+-                 "cves" : "cve",
+-                 "cve" : "cve",
+-
+-                 "newpackages" : "newpackage",
+-                 "new-packages" : "newpackage",
+-                 "newpackage" : "newpackage",
+-                 "new-package" : "newpackage",
+-                 "new" : "newpackage"}
+-    for filt_type in __update_info_types__:
+-        _cmd2filt[filt_type] = filt_type
+-
+-    def doCommand(self, base, basecmd, extcmds):
+-        if basecmd in self.direct_cmds:
+-            subcommand = self.direct_cmds[basecmd]
+-        elif extcmds and extcmds[0] in ('list', 'info', 'summary'):
+-            subcommand = extcmds[0]
+-            extcmds = extcmds[1:]
+-        elif extcmds and extcmds[0] in self._cmd2filt:
+-            subcommand = 'list'
+-        elif extcmds:
+-            subcommand = 'info'
+-        else:
+-            subcommand = 'summary'
+-
+-        if subcommand == 'list':
+-            return self.doCommand_li(base, 'updateinfo list', extcmds,
+-                                     self.list_show_pkgs)
+-        if subcommand == 'info':
+-            return self.doCommand_li(base, 'updateinfo info', extcmds,
+-                                     self.info_show_pkgs)
+-
+-        if subcommand == 'summary':
+-            return self.doCommand_li(base, 'updateinfo summary', extcmds,
+-                                     self.summary_show_pkgs)
+-
+-    def doCommand_li_new(self, base, list_type, extcmds, md_info, msg,
+-                         show_pkgs):
+-        done_pkgs = set()
+-        data = []
+-        for (notice, pkgtup) in sorted(self._get_new_pkgs(md_info),
+-                                       key=lambda x: x[1][0]):
+-            if extcmds and not _match_sec_cmd(extcmds, pkgtup[0], notice):
+-                continue
+-            n = pkgtup[0]
+-            if n in done_pkgs:
+-                continue
+-            ipkgs = list(reversed(sorted(base.rpmdb.searchNames([n]))))
+-            if list_type in ('installed', 'updates') and not ipkgs:
+-                done_pkgs.add(n)
+-                continue
+-            if list_type == 'available' and ipkgs:
+-                done_pkgs.add(n)
+-                continue
+-
+-            pkgs = base.pkgSack.searchPkgTuple(pkgtup)
+-            if not pkgs:
+-                continue
+-            if list_type == "updates" and pkgs[0].verLE(ipkgs[0]):
+-                done_pkgs.add(n)
+-                continue
+-            done_pkgs.add(n)
+-            data.append((notice, pkgtup, pkgs[0]))
+-        show_pkgs(base, md_info, list_type, None, {}, data, msg)
+-
+-    def _parse_extcmds(self, extcmds):
+-        filt_type = None
+-        show_type = None
+-        if len(extcmds) >= 1:
+-            filt_type = None
+-            
+-            if extcmds[0] in self._cmd2filt:
+-                filt_type = self._cmd2filt[extcmds.pop(0)]
+-            show_type = filt_type
+-            if filt_type and filt_type in __update_info_types__:
+-                show_type = None
+-        return extcmds, show_type, filt_type
+-
+-    def doCommand_li(self, base, basecmd, extcmds, show_pkgs):
+-        self.repos = base.repos
+-        md_info = ysp_gen_metadata(self.repos.listEnabled())
+-        def msg(x):
+-            #  Don't use: logger.log(logginglevels.INFO_2, x)
+-            # or -q deletes everything.
+-            print x
+-
+-        opts, cmdline = base.plugins.cmdline
+-        extcmds, show_type, filt_type = self._parse_extcmds(extcmds)
+-
+-        list_type = "available"
+-        if extcmds and extcmds[0] in ("updates","available","installed", "all"):
+-            list_type = extcmds.pop(0)
+-
+-        if filt_type == "newpackage":
+-            # No filtering here, as we want what isn't installed...
+-            self.doCommand_li_new(base, list_type, extcmds, md_info, msg,
+-                                  show_pkgs)
+-            return 0, [basecmd + ' new done']
+-
+-        opts.sec_cmds = extcmds
+-        used_map = ysp_gen_used_map(opts)
+-        iname2tup = {}
+-        if False: pass
+-        elif list_type in ('installed', 'all'):
+-            name2tup = _get_name2allpkgtup(base)
+-            iname2tup = _get_name2instpkgtup(base)
+-        elif list_type == 'updates':
+-            name2tup = _get_name2oldpkgtup(base)
+-        elif list_type == 'available':
+-            name2tup = _get_name2instpkgtup(base)
+-
+-        def _show_pkgtup(pkgtup):
+-            name = pkgtup[0]
+-            notices = reversed(md_info.get_applicable_notices(pkgtup))
+-            for (pkgtup, notice) in notices:
+-                if filt_type and not ysp_has_info_md(filt_type, notice):
+-                    continue
+-
+-                if list_type == 'installed':
+-                    # Remove any that are newer than what we have installed
+-                    if _rpm_tup_vercmp(iname2tup[name], pkgtup) < 0:
+-                        continue
+-
+-                if ysp_should_filter_pkg(opts, name, notice, used_map):
+-                    yield (pkgtup, notice)
+-
+-        data = []
+-        for pkgname in sorted(name2tup):
+-            for (pkgtup, notice) in _show_pkgtup(name2tup[pkgname]):
+-                d = {}
+-                (d['n'], d['a'], d['e'], d['v'], d['r']) = pkgtup
+-                if d['e'] == '0':
+-                    d['epoch'] = ''
+-                else:
+-                    d['epoch'] = "%s:" % d['e']
+-                data.append((notice, pkgtup,
+-                            "%(n)s-%(epoch)s%(v)s-%(r)s.%(a)s" % d))
+-        show_pkgs(base, md_info, list_type, show_type, iname2tup, data, msg)
+-
+-        ysp_chk_used_map(used_map, msg)
+-
+-        return 0, [basecmd + ' done']
+-            
+-
+-# "Borrowed" from yumcommands.py
+-def yumcommands_checkRootUID(base):
+-    """
+-    Verify that the program is being run by the root user.
+-
+-    @param base: a YumBase object.
+-    """
+-    if base.conf.uid != 0:
+-        base.logger.critical('You need to be root to perform this command.')
+-        raise CliError
+-def yumcommands_checkGPGKey(base):
+-    if not base.gpgKeyCheck():
+-        for repo in base.repos.listEnabled():
+-            if repo.gpgcheck != 'false' and repo.gpgkey == '':
+-                msg = """
+-You have enabled checking of packages via GPG keys. This is a good thing. 
+-However, you do not have any GPG public keys installed. You need to download
+-the keys for packages you wish to install and install them.
+-You can do that by running the command:
+-    rpm --import public.gpg.key
+-
+-
+-Alternatively you can specify the url to the key you would like to use
+-for a repository in the 'gpgkey' option in a repository section and yum 
+-will install it for you.
+-
+-For more information contact your distribution or package provider.
+-"""
+-                base.logger.critical(msg)
+-                raise CliError
+-
+-def _get_name2pkgtup(base, pkgtups):
+-    name2tup = {}
+-    for pkgtup in pkgtups:
+-        # Get the latest "old" pkgtups
+-        if (pkgtup[0] in name2tup and
+-            _rpm_tup_vercmp(name2tup[pkgtup[0]], pkgtup) > 0):
+-            continue
+-        name2tup[pkgtup[0]] = pkgtup
+-    return name2tup
+-def _get_name2oldpkgtup(base):
+-    """ Get the pkgtups for all installed pkgs. which have an update. """
+-    oupdates = map(lambda x: x[1], base.up.getUpdatesTuples())
+-    return _get_name2pkgtup(base, oupdates)
+-def _get_name2instpkgtup(base):
+-    """ Get the pkgtups for all installed pkgs. """
+-    return _get_name2pkgtup(base, base.rpmdb.simplePkgList())
+-def _get_name2allpkgtup(base):
+-    """ Get the pkgtups for all installed pkgs. and munge that to be the
+-        first possible pkgtup. """
+-    ofirst = [(pt[0], pt[1], '0','0','0') for pt in base.rpmdb.simplePkgList()]
+-    return _get_name2pkgtup(base, ofirst)
+-
+-
+-
+-class SecurityUpdateCommand:
+-    def getNames(self):
+-        return ['update-minimal']
+-
+-    def getUsage(self):
+-        return "[PACKAGE-wildcard]"
+-
+-    def getSummary(self):
+-        return "Works like update, but goes to the 'newest' package match which fixes a problem that affects your system"
+-
+-    def doCheck(self, base, basecmd, extcmds):
+-        yumcommands_checkRootUID(base)
+-        yumcommands_checkGPGKey(base)
+-
+-    def doCommand(self, base, basecmd, extcmds):
+-        if hasattr(base, 'run_with_package_names'):
+-            base.run_with_package_names.add(__package_name__)
+-        md_info       = ysp_gen_metadata(base.repos.listEnabled())
+-        opts          = base.plugins.cmdline[0]
+-        opts.sec_cmds = []
+-        used_map      = ysp_gen_used_map(opts)
+-
+-        ndata = not (opts.security or opts.bugfixes or
+-                     opts.advisory or opts.bz or opts.cve or opts.severity)
+-
+-        # NOTE: Not doing obsoletes processing atm. ... maybe we should? --
+-        # Also worth pointing out we don't go backwards for obsoletes in the:
+-        # update --security case etc.
+-
+-        # obsoletes = base.up.getObsoletesTuples(newest=False)
+-        # for (obsoleting, installed) in sorted(obsoletes, key=lambda x: x[0]):
+-        #   pass
+-
+-        # Tuples == (n, a, e, v, r)
+-        oupdates  = map(lambda x: x[1], base.up.getUpdatesTuples())
+-        for oldpkgtup in sorted(oupdates):
+-            data = md_info.get_applicable_notices(oldpkgtup)
+-            if ndata: # No options means pick the oldest update
+-                data.reverse()
+-
+-            for (pkgtup, notice) in data:
+-                name = pkgtup[0]
+-                if extcmds and not _match_sec_cmd(extcmds, name, notice):
+-                    continue
+-                if (not ndata and
+-                    not ysp_should_filter_pkg(opts, name, notice, used_map)):
+-                    continue
+-                base.update(name=pkgtup[0], arch=pkgtup[1], epoch=pkgtup[2],
+-                            version=pkgtup[3], release=pkgtup[4])
+-                break
+-
+-        if len(base.tsInfo) > 0:
+-            msg = '%d packages marked for minimal Update' % len(base.tsInfo)
+-            return 2, [msg]
+-        else:
+-            return 0, ['No Packages marked for minimal Update']
+-
+-def config_hook(conduit):
+-    '''
+-    Yum Plugin Config Hook: 
+-    Setup the option parser with the '--advisory', '--bz', '--cve',
+-    '--security' and '--severity' command line options. Also the 'updateinfo'
+-    and 'update-minimal' commands.
+-    '''
+-
+-    parser = conduit.getOptParser()
+-    if not parser:
+-        return
+-
+-    if hasattr(parser, 'plugin_option_group'):
+-        parser = parser.plugin_option_group
+-
+-    conduit.registerCommand(UpdateinfoCommand())
+-    conduit.registerCommand(SecurityUpdateCommand())
+-    def osec(opt, key, val, parser):
+-         # CVE is a subset of --security on RHEL, but not on Fedora
+-        parser.values.security = True
+-    def obug(opt, key, val, parser):
+-        parser.values.bugfixes = True
+-    def ocve(opt, key, val, parser):
+-        parser.values.cve.extend(val.split(','))
+-    def obz(opt, key, val, parser):
+-        parser.values.bz.append(str(val))
+-    def oadv(opt, key, val, parser):
+-        parser.values.advisory.extend(val.split(','))
+-    def osev(opt, key, val, parser):
+-        parser.values.severity.extend(val.split(','))
+-            
+-    parser.add_option('--security', action="callback",
+-                      callback=osec, dest='security', default=False,
+-                      help='Include security relevant packages')
+-    parser.add_option('--bugfixes', action="callback",
+-                      callback=obug, dest='bugfixes', default=False,
+-                      help='Include bugfix relevant packages')
+-    parser.add_option('--cve', action="callback", type="string",
+-                      callback=ocve, dest='cve', default=[],
+-                      help='Include packages needed to fix the given CVE')
+-    parser.add_option('--bz', action="callback",
+-                      callback=obz, dest='bz', default=[], type="int",
+-                      help='Include packages needed to fix the given BZ')
+-    parser.add_option('--sec-severity', action="callback",
+-                      callback=osev, dest='severity', default=[], type="string",
+-                      help='Include security relevant packages, of this severity')
+-    parser.add_option('--advisory', action="callback",
+-                      callback=oadv, dest='advisory', default=[], type="string",
+-                      help='Include packages needed to fix the given advisory')
+-
+-#  You might think we'd just use the exclude_hook, and call delPackage
+-# and indeed that works for list updates etc.
+-#
+-# __but__ that doesn't work for dependancies on real updates
+-#
+-#  So to fix deps. we need to do it at the preresolve stage and take the
+-# "transaction package list" and then remove packages from that.
+-#
+-# __but__ that doesn't work for lists ... so we do it two ways
+-#
+-def ysp_should_keep_pkg(opts, pkgtup, md_info, used_map):
+-    """ Do we want to keep this package to satisfy the security limits. """
+-    name = pkgtup[0]
+-    for (pkgtup, notice) in md_info.get_applicable_notices(pkgtup):
+-        if ysp_should_filter_pkg(opts, name, notice, used_map):
+-            return True
+-    return False
+-
+-def ysp_check_func_enter(conduit):
+-    """ Stuff we need to do in both list and update modes. """
+-    
+-    opts, args = conduit.getCmdLine()
+-
+-    ndata = not (opts.security or opts.bugfixes or
+-                 opts.advisory or opts.bz or opts.cve or opts.severity)
+-    
+-    ret = None
+-    if len(args) >= 2:
+-        if ((args[0] == "list") and (args[1] in ("obsoletes", "updates"))):
+-            ret = {"skip": ndata, "list_cmd": True}
+-        if ((args[0] == "info") and (args[1] in ("obsoletes", "updates"))):
+-            ret = {"skip": ndata, "list_cmd": True}
+-    if len(args):
+-
+-        # All the args. stuff is done in our command:
+-        if (args[0] == "update-minimal"):
+-            return (opts, {"skip": True, "list_cmd": False, "msg": True})
+-            
+-        if (args[0] == "check-update"):
+-            ret = {"skip": ndata, "list_cmd": True}
+-        if (args[0] in ["update", "upgrade"]):
+-            ret = {"skip": ndata, "list_cmd": False}
+-        if args[0] == 'updateinfo':
+-            return (opts, {"skip": True, "list_cmd": True})
+-        if (args[0] in UpdateinfoCommand.direct_cmds):
+-            return (opts, {"skip": True, "list_cmd": True})
+-
+-    if ret:
+-        return (opts, ret)
+-    
+-    if not ndata:
+-        conduit.error(2, 'Skipping security plugin, other command')
+-    return (opts, {"skip": True, "list_cmd": False, "msg": True})
+-
+-def exclude_hook(conduit):
+-    '''
+-    Yum Plugin Exclude Hook:
+-    Check and remove packages that don\'t align with the security config.
+-    '''
+-    
+-    opts, info = ysp_check_func_enter(conduit)
+-    if info["skip"]:
+-        return
+-
+-    if not info["list_cmd"]:
+-        return
+-    
+-    if hasattr(conduit, 'registerPackageName'):
+-        conduit.registerPackageName(__package_name__)
+-    conduit.info(2, 'Limiting package lists to security relevant ones')
+-    
+-    md_info = ysp_gen_metadata(conduit.getRepos().listEnabled())
+-
+-    def ysp_del_pkg(pkg):
+-        """ Deletes a package from all trees that yum knows about """
+-        conduit.info(3," --> %s from %s excluded (non-security)" %
+-                     (pkg,pkg.repoid))
+-        conduit.delPackage(pkg)
+-
+-    opts.sec_cmds = []
+-    used_map = ysp_gen_used_map(opts)
+-
+-    # The official API is:
+-    #
+-    # pkgs = conduit.getPackages()
+-    #
+-    # ...however that is _extremely_ slow, deleting all packages. So we ask
+-    # for the list of update packages, which is all we care about.    
+-    upds = conduit._base.doPackageLists(pkgnarrow='updates')
+-    pkgs = upds.updates
+-    # In theory we don't need to do this in some cases, but meh.
+-    upds = conduit._base.doPackageLists(pkgnarrow='obsoletes')
+-    pkgs += upds.obsoletes
+-
+-    name2tup = _get_name2oldpkgtup(conduit._base)
+-    
+-    tot = 0
+-    cnt = 0
+-    for pkg in pkgs:
+-        tot += 1
+-        name = pkg.name
+-        if (name not in name2tup or
+-            not ysp_should_keep_pkg(opts, name2tup[name], md_info, used_map)):
+-            ysp_del_pkg(pkg)
+-            continue
+-        cnt += 1
+-
+-    ysp_chk_used_map(used_map, lambda x: conduit.error(2, x))
+-    if cnt:
+-        conduit.info(2, '%d package(s) needed for security, out of %d available' % (cnt, tot))
+-    else:
+-        conduit.info(2, 'No packages needed for security; %d packages available' % tot)
+-
+-    _check_running_kernel(conduit._base, md_info, lambda x: conduit.info(2, x))
+-
+-def _check_running_kernel(yb, md_info, msg):
+-    if not hasattr(yum.misc, 'get_running_kernel_pkgtup'):
+-        return # Back compat.
+-
+-    kern_pkgtup = yum.misc.get_running_kernel_pkgtup(yb.ts)
+-    if kern_pkgtup[0] is None:
+-        return
+-
+-    found_sec = False
+-    for (pkgtup, notice) in md_info.get_applicable_notices(kern_pkgtup):
+-        if found_sec or notice['type'] != 'security':
+-            continue
+-        found_sec = True
+-        ipkg = yb.rpmdb.searchPkgTuple(pkgtup)
+-        if not ipkg:
+-            continue # Not installed
+-        ipkg = ipkg[0]
+-
+-        e = ''
+-        if kern_pkgtup[2] != '0':
+-            e = '%s:' % kern_pkgtup[2]
+-        rpkg = '%s-%s%s-%s.%s' % (kern_pkgtup[0], e,
+-                                  kern_pkgtup[3], kern_pkgtup[4],
+-                                  kern_pkgtup[1])
+-
+-        msg('Security: %s is an installed security update' % ipkg)
+-        msg('Security: %s is the currently running version' % rpkg)
+-        break
+-
+-
+-def preresolve_hook(conduit):
+-    '''
+-    Yum Plugin PreResolve Hook:
+-    Check and remove packages that don\'t align with the security config.
+-    '''
+-
+-    opts, info = ysp_check_func_enter(conduit)
+-    if info["skip"]:
+-        return
+-
+-    if info["list_cmd"]:
+-        return
+-    
+-    if hasattr(conduit, 'registerPackageName'):
+-        conduit.registerPackageName(__package_name__)
+-    conduit.info(2, 'Limiting packages to security relevant ones')
+-
+-    md_info = ysp_gen_metadata(conduit.getRepos().listEnabled())
+-
+-    def ysp_del_pkg(tspkg):
+-        """ Deletes a package within a transaction. """
+-        conduit.info(3," --> %s from %s excluded (non-security)" %
+-                     (tspkg.po,tspkg.po.repoid))
+-        tsinfo.remove(tspkg.pkgtup)
+-
+-    tot = 0
+-    cnt = 0
+-    opts.sec_cmds = []
+-    used_map = ysp_gen_used_map(opts)
+-    tsinfo = conduit.getTsInfo()
+-    tspkgs = tsinfo.getMembers()
+-    #  Ok, here we keep any pkgs that pass "ysp" tests, then we keep all
+-    # related pkgs ... Ie. "installed" version marked for removal.
+-    keep_pkgs = set()
+-
+-    count_states = set(TS_INSTALL_STATES + [TS_ERASE])
+-    count_pkgs = set()
+-    for tspkg in tspkgs:
+-        if tspkg.output_state in count_states:
+-            count_pkgs.add(tspkg.po)
+-
+-    name2tup = _get_name2oldpkgtup(conduit._base)
+-    for tspkg in tspkgs:
+-        if tspkg.output_state in count_states:
+-            tot += 1
+-        name = tspkg.po.name
+-        if (name not in name2tup or
+-            not ysp_should_keep_pkg(opts, name2tup[name], md_info, used_map)):
+-            continue
+-        if tspkg.output_state in count_states:
+-            cnt += 1
+-        keep_pkgs.add(tspkg.po)
+-
+-    scnt = cnt
+-    mini_depsolve_again = True
+-    while mini_depsolve_again:
+-        mini_depsolve_again = False
+-
+-        for tspkg in tspkgs:
+-            if tspkg.po in keep_pkgs:
+-                # Find any related pkgs, and add them:
+-                for (rpkg, reason) in tspkg.relatedto:
+-                    if rpkg not in keep_pkgs:
+-                        if rpkg in count_pkgs:
+-                            cnt += 1
+-                        keep_pkgs.add(rpkg)
+-                        mini_depsolve_again = True
+-            else:
+-                # If related to any keep pkgs, add us
+-                for (rpkg, reason) in tspkg.relatedto:
+-                    if rpkg in keep_pkgs:
+-                        if rpkg in count_pkgs:
+-                            cnt += 1
+-                        keep_pkgs.add(tspkg.po)
+-                        mini_depsolve_again = True
+-                        break
+-
+-    for tspkg in tspkgs:
+-        if tspkg.po not in keep_pkgs:
+-            ysp_del_pkg(tspkg)
+-
+-    ysp_chk_used_map(used_map, lambda x: conduit.error(2, x))
+-    
+-    if cnt:
+-        conduit.info(2, '%d package(s) needed (+%d related) for security, out of %d available' % (scnt, cnt - scnt, tot))
+-    else:
+-        conduit.info(2, 'No packages needed for security; %d packages available' % tot)
+-
+-if __name__ == '__main__':
+-    print "This is a plugin that is supposed to run from inside YUM"
+diff --git a/po/POTFILES.in b/po/POTFILES.in
+index d85030c..2f12118 100644
+--- a/po/POTFILES.in
++++ b/po/POTFILES.in
+@@ -34,7 +34,6 @@ plugins/merge-conf/merge-conf.py
+ plugins/aliases/aliases.py
+ plugins/protectbase/protectbase.py
+ plugins/versionlock/versionlock.py
+-plugins/security/security.py
+ plugins/nofsync/nofsync.py
+ plugins/tmprepo/tmprepo.py
+ plugins/priorities/priorities.py
+diff --git a/yum-utils.spec b/yum-utils.spec
+index 6d6d699..de6fbfd 100644
+--- a/yum-utils.spec
++++ b/yum-utils.spec
+@@ -155,20 +155,6 @@ This yum plugin adds the "--merge-conf" command line option. With this option,
+ Yum will ask you what to do with config files which have changed on updating a
+ package.
+ 
+-%package -n yum-plugin-security
+-Summary: Yum plugin to enable security filters
+-Group: System Environment/Base
+-Provides: yum-security = %{version}-%{release}
+-Obsoletes: yum-security < 1.1.20-0
+-Conflicts: yum-security < 1.1.20-0
+-Requires: yum >= 3.2.18
+-
+-%description -n yum-plugin-security
+-This plugin adds the options --security, --cve, --bz and --advisory flags
+-to yum and the list-security and info-security commands.
+-The options make it possible to limit list/upgrade of packages to specific
+-security relevant ones. The commands give you the security information.
+-
+ %package -n yum-plugin-upgrade-helper
+ Summary: Yum plugin to help upgrades to the next distribution version
+ Group: System Environment/Base
+@@ -396,7 +382,6 @@ plugins="\
+  tsflags \
+  priorities \
+  merge-conf \
+- security \
+  upgrade-helper \
+  aliases \
+  list-data \
+@@ -565,13 +550,6 @@ fi
+ %config(noreplace) %{_sysconfdir}/yum/pluginconf.d/merge-conf.conf
+ %{pluginhome}/merge-conf.*
+ 
+-%files -n yum-plugin-security
+-%defattr(-, root, root)
+-%doc COPYING
+-%config(noreplace) %{_sysconfdir}/yum/pluginconf.d/security.conf
+-%{pluginhome}/security.*
+-%{_mandir}/man8/yum-security.8.*
+-
+ %files -n yum-plugin-upgrade-helper
+ %defattr(-, root, root)
+ %doc COPYING

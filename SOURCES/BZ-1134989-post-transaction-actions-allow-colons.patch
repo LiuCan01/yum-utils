@@ -1,0 +1,19 @@
+commit 8b046d7d18e0f582d9f703336d5c25a71cf02966
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Thu Aug 28 18:18:53 2014 +0200
+
+    yum-post-transaction-actions: allow colons in command part. BZ 1134989
+
+diff --git a/plugins/post-transaction-actions/post-transaction-actions.py b/plugins/post-transaction-actions/post-transaction-actions.py
+index 4d015c1..d59dc40 100644
+--- a/plugins/post-transaction-actions/post-transaction-actions.py
++++ b/plugins/post-transaction-actions/post-transaction-actions.py
+@@ -51,7 +51,7 @@ def parse_actions(ddir, conduit):
+                 line = line.strip()
+                 if line and line[0] != "#":
+                     try:
+-                        (a_key, a_state, a_command) = line.split(':')
++                        (a_key, a_state, a_command) = line.split(':', 2)
+                     except ValueError,e:
+                         conduit.error(2,'Bad Action Line: %s' % line)
+                         continue

@@ -1,0 +1,23 @@
+commit b6e8afc8511262ca5405a084d806cdd5e52519c7
+Author: Valentina Mukhamedzhanova <vmukhame@redhat.com>
+Date:   Tue May 26 10:01:07 2015 +0200
+
+    yum-config-manager: require \* syntax to disable all repos. BZ#1151154
+
+diff --git a/yum-config-manager.py b/yum-config-manager.py
+index 708c33f..0531c72 100755
+--- a/yum-config-manager.py
++++ b/yum-config-manager.py
+@@ -146,8 +146,11 @@ if opts.enable and opts.disable:
+     logger.error("Error: Trying to enable and disable repos.")
+     opts.enable = opts.disable = False
+ if opts.enable and not args:
+-    logger.error("Error: Trying to enable already enabled repos.")
++    logger.error("Error: please specify repos to enable (\* to enable all).")
+     opts.enable = False
++if opts.disable and not args:
++    logger.error("Error: please specify repos to disable (\* to disable all).")
++    opts.disable = False
+ 
+ only = None
+ 

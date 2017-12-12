@@ -1,0 +1,54 @@
+diff -up yum-utils-1.1.31/needs-restarting.py.old yum-utils-1.1.31/needs-restarting.py
+--- yum-utils-1.1.31/needs-restarting.py.old	2014-09-04 14:19:27.000000000 +0200
++++ yum-utils-1.1.31/needs-restarting.py	2014-09-04 14:29:47.825438668 +0200
+@@ -44,6 +44,8 @@ import yum.misc
+ import glob
+ import stat
+ from optparse import OptionParser
++sys.path.insert(0,'/usr/share/yum-cli')
++import utils
+ 
+ def parseargs(args):
+     usage = """
+@@ -77,7 +79,8 @@ def get_open_files(pid):
+     files = []
+     smaps = '/proc/%s/smaps' % pid
+     try:
+-        maps = open(smaps, 'r').readlines()
++        with open(smaps, 'r') as maps_f:
++            maps = maps_f.readlines()
+     except (IOError, OSError), e:
+         print "Could not open %s" % smaps
+         return files
+@@ -88,7 +91,7 @@ def get_open_files(pid):
+             continue
+         line = line.replace('\n', '')
+         filename = line[slash:]
+-        #filename = filename.replace('(deleted)', '') #only mildly retarded
++        filename = filename.split(';')[0]
+         filename = filename.strip()
+         if filename not in files:
+             files.append(filename)
+@@ -109,10 +112,11 @@ def main(args):
+     
+     needing_restart = set()
+ 
++    boot_time = utils.get_boot_time()
+     for pid in return_running_pids(uid=myuid):
+         try:
+-            pid_start = os.stat('/proc/' + pid)[stat.ST_CTIME]
+-        except OSError, e:
++            pid_start = utils.get_process_time(int(pid), boot_time)['start_time']
++        except (OSError, IOError), e:
+             continue
+         found_match = False
+         for fn in get_open_files(pid):
+@@ -158,7 +162,7 @@ def main(args):
+     for pid in needing_restart:
+         try:
+             cmdline = open('/proc/' +pid+ '/cmdline', 'r').read()
+-        except OSError, e:
++        except (OSError, IOError), e:
+             print "Couldn't access process information for %s: %s" % (pid, str(e))
+             continue
+         # proc cmdline is null-delimited so clean that up

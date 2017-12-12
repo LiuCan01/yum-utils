@@ -1,0 +1,32 @@
+Index: /yum-builddep.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- /yum-builddep.py	(revision )
++++ /yum-builddep.py	(revision )
+@@ -27,7 +27,7 @@
+ import rpmUtils
+ import rpm
+ 
+-rhn_source_repos = False
++rhn_source_repos = True
+ 
+ # Copied from yumdownloader (need a yum-utils python module ;)
+ # This is to fix Bug 469
+Index: /yumdownloader.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- /yumdownloader.py	(revision )
++++ /yumdownloader.py	(revision )
+@@ -32,7 +32,7 @@
+ import rpmUtils
+ import logging
+ 
+-rhn_source_repos = False
++rhn_source_repos = True
+ 
+ # This is to fix Bug 469
+ # To convert from a pkg to a source pkg, we have a problem in that all we have

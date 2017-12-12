@@ -1,0 +1,39 @@
+diff -up yum-utils-1.1.31/needs-restarting.py.old yum-utils-1.1.31/needs-restarting.py
+--- yum-utils-1.1.31/needs-restarting.py.old	2014-09-18 10:17:13.000000000 +0200
++++ yum-utils-1.1.31/needs-restarting.py	2014-09-18 10:22:41.596236067 +0200
+@@ -44,6 +44,7 @@ import yum.misc
+ import glob
+ import stat
+ from optparse import OptionParser
++from yum.Errors import RepoError
+ sys.path.insert(0,'/usr/share/yum-cli')
+ import utils
+ 
+@@ -82,7 +83,7 @@ def get_open_files(pid):
+         with open(smaps, 'r') as maps_f:
+             maps = maps_f.readlines()
+     except (IOError, OSError), e:
+-        print "Could not open %s" % smaps
++        print >>sys.stderr, "Could not open %s" % smaps
+         return files
+ 
+     for line in maps:
+@@ -164,7 +165,7 @@ def main(args):
+         try:
+             cmdline = open('/proc/' +pid+ '/cmdline', 'r').read()
+         except (OSError, IOError), e:
+-            print "Couldn't access process information for %s: %s" % (pid, str(e))
++            print >>sys.stderr, "Couldn't access process information for %s: %s" % (pid, str(e))
+             continue
+         # proc cmdline is null-delimited so clean that up
+         cmdline = cmdline.replace('\000', ' ')
+@@ -173,4 +174,8 @@ def main(args):
+     return 0
+     
+ if __name__ == "__main__":
+-    sys.exit(main(sys.argv))
++    try:
++        sys.exit(main(sys.argv))
++    except RepoError, e:
++        print >>sys.stderr, e
++        sys.exit(1)
